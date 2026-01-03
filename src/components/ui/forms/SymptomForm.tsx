@@ -17,6 +17,7 @@ export default function SymptomForm() {
             id="symptom"
             name="symptom"
             type="text"
+            placeholder="Headache"
             className="
                 w-full
                 rounded-md
