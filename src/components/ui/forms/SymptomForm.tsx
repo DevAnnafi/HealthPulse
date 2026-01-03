@@ -1,41 +1,93 @@
 "use client";
 
-import {useState} from 'react';
+import { useState } from "react";
 
 export default function SymptomForm() {
-    return (
-      <form className="w-full max-w-md border rounded-md p-6">
-        <h2 className="text-xl font-semibold mb-4">
-            Log a Symptom
-        </h2>
+  const [symptom, setSymptom] = useState("");
+  const [error, setError] = useState("");
+  const [success, setSuccess] = useState(false);
 
-        <label htmlFor="symptom" className="block text-sm font-medium ">
-            Symptom
+  function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
 
-        </label>
-        <input
-            id="symptom"
-            name="symptom"
-            type="text"
-            placeholder="Headache"
-            className="
-                w-full
-                rounded-md
-                border
-                border-blue-200
-                bg-white
-                px-3
-                py-2
-                text-sm
-                text-gray-900
-                focus:outline-none
-                focus:ring-2
-                focus:ring-blue-400
-                focus:border-blue-400
-            "
-            />
+    // Basic validation
+    if (!symptom.trim()) {
+      setError("Symptom is required.");
+      setSuccess(false);
+      return;
+    }
 
-      </form>
-    );
+    // Simulate submit
+    console.log({ symptom });
+
+    // Reset state
+    setError("");
+    setSuccess(true);
+    setSymptom("");
   }
-  
+
+  return (
+    <form
+      onSubmit={handleSubmit}
+      className="w-full max-w-md rounded-lg border border-blue-100 bg-blue-50 p-6"
+    >
+      <h2 className="text-xl font-semibold mb-4 text-blue-900">
+        Log a Symptom
+      </h2>
+
+      {/* Success Message */}
+      {success && (
+        <p className="mb-4 text-sm text-green-700">
+          Symptom logged successfully.
+        </p>
+      )}
+
+      {/* Error Message */}
+      {error && (
+        <p className="mb-4 text-sm text-red-700">
+          {error}
+        </p>
+      )}
+
+      <div className="mb-4">
+        <label
+          htmlFor="symptom"
+          className="block text-sm font-medium text-blue-800 mb-1"
+        >
+          Symptom
+        </label>
+
+        <input
+          id="symptom"
+          name="symptom"
+          type="text"
+          placeholder="Headache"
+          value={symptom}
+          onChange={(e) => setSymptom(e.target.value)}
+          className="
+            w-full
+            rounded-md
+            border
+            border-blue-200
+            bg-white
+            px-3
+            py-2
+            text-sm
+            text-gray-900
+            focus:outline-none
+            focus:ring-2
+            focus:ring-blue-400
+            focus:border-blue-400
+          "
+        />
+      </div>
+
+      <button
+        type="submit"
+        className="w-full rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
+      >
+        Log Symptom
+      </button>
+    </form>
+  );
+}
