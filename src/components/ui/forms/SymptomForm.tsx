@@ -6,6 +6,7 @@ export default function SymptomForm() {
   const [symptom, setSymptom] = useState("");
   const [error, setError] = useState("");
   const [success, setSuccess] = useState(false);
+  const [severity, setSeverity] = useState(1);
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -17,13 +18,20 @@ export default function SymptomForm() {
       return;
     }
 
+    if (severity < 1 || severity > 10) {
+        setError("Severity must be between 1 and 10.");
+        setSuccess(false);
+        return;
+      }
+
     // Simulate submit
-    console.log({ symptom });
+    console.log({ symptom, severity });
 
     // Reset state
     setError("");
     setSuccess(true);
     setSymptom("");
+    setSeverity(1);
   }
 
   return (
@@ -88,6 +96,38 @@ export default function SymptomForm() {
       >
         Log Symptom
       </button>
+
+      {/* Severity */}
+      <div className="mb-6">
+        <label
+          htmlFor="severity"
+          className="block text-sm font-medium text-blue-800 p-2 mb-1"
+        >
+          Severity (1–10)
+        </label>
+
+        <select
+          id="severity"
+          name="severity"
+          value={severity}
+          onChange={(e) => setSeverity(Number(e.target.value))}
+          className="w-full rounded-md border border-blue-200 bg-white px-3 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400"
+        >
+          {Array.from({ length: 10 }, (_, i) => i + 1).map((value) => (
+            <option key={value} value={value}>
+              {value} {value === 1 ? "(Mild)" : value === 10 ? "(Severe)" : ""}
+            </option>
+          ))}
+        </select>
+      </div>
+
+      <button
+        type="submit"
+        className="w-full rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
+      >
+        Log Severity 
+      </button>
+
     </form>
   );
 }
