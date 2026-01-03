@@ -1,14 +1,16 @@
-import Link from "next/link";
-
 export default function Header() {
-  return (
-    <header className="w-full h-16 border-b bg-white">
-      <div className="max-w-7xl mx-left h-full flex items-center justify-between px-6">
-        {/* Far Left */}
-        <span className="font-semibold text-lg">
+    return (
+      <header className="relative w-full h-16 border-b bg-white">
+        {/* Left */}
+        <span className="absolute left-6 top-1/2 -translate-y-1/2 font-semibold text-lg">
           HealthPulse
         </span>
-      </div>
-    </header>
-  );
-}
+  
+        {/* Center */}
+        <button className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 font-semibold text-lg">
+          Dashboard
+        </button>
+      </header>
+    );
+  }
+  
