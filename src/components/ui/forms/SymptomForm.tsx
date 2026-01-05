@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { submitSymptom } from "@/services/symptomService";
 
 export default function SymptomForm() {
   const [symptom, setSymptom] = useState("");
@@ -10,7 +11,7 @@ export default function SymptomForm() {
   const[notes, setNotes]= useState("");
   const [success, setSuccess] = useState(false);
 
-  function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
 
     if (!symptom.trim()) {
@@ -31,7 +32,7 @@ export default function SymptomForm() {
       return;
     }
 
-    console.log({ symptom, severity, durationDays });
+   await submitSymptom({ symptom, severity, durationDays, notes });
 
     setError("");
     setSuccess(true);
