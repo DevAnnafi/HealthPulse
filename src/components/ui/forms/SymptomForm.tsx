@@ -7,6 +7,7 @@ export default function SymptomForm() {
   const [severity, setSeverity] = useState(1);
   const [durationDays, setDurationDays] = useState(1);
   const [error, setError] = useState("");
+  const[notes, setNotes]= useState("");
   const [success, setSuccess] = useState(false);
 
   function handleSubmit(e: React.FormEvent) {
@@ -37,6 +38,7 @@ export default function SymptomForm() {
     setSymptom("");
     setSeverity(1);
     setDurationDays(1);
+    setNotes("");
   }
 
   return (
@@ -103,6 +105,20 @@ export default function SymptomForm() {
           value={durationDays}
           onChange={(e) => setDurationDays(Number(e.target.value))}
           className="w-full rounded-md border border-blue-200 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
+        />
+      </div>
+
+      {/* Notes */}
+      <div className="space-y-1">
+        <label className="block text-sm font-medium text-blue-800">
+          Additional Notes (optional)
+        </label>
+        <textarea
+          rows={3}
+          placeholder="Triggers, time of day, medications taken, etc."
+          value={notes}
+          onChange={(e) => setNotes(e.target.value)}
+          className="w-full rounded-md border border-blue-200 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400 resize-none"
         />
       </div>
 
