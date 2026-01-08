@@ -117,16 +117,32 @@ export function groupEntriesByDay(
     dates.push(current.toISOString().split("T")[0]);
   }
 
-
-
-
   // 3. Initialize an empty weekly metrics accumulator
   // - Keyed by HealthMetricType
+  // Create a variable to hold weekly metric accumulators
+  // This is an object keyed by HealthMetricType
+  // Each value is an accumulator object (total, min, max, dayCount)
+  // Start with an empty object
   // - For each metric, prepare:
   //   - total = 0
   //   - min = undefined
   //   - max = undefined
   //   - dayCount = 0
+  type WeeklyMetricAccumulator = {
+    total: number;
+    min?: number;
+    max?: number;
+    dayCount: number;
+  };
+  
+  const weeklyMetrics: Partial<
+    Record<HealthMetricType, WeeklyMetricAccumulator>
+  > = {};
+  
+
+ 
+
+
 
   // 4. Loop through each day in the 7-day range
   // - For each day:
