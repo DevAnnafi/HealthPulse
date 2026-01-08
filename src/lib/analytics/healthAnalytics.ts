@@ -5,6 +5,34 @@ export function normalizeDate(timestamp: number): string {
     return date.toISOString().split("T")[0];
 }
 
+function parseISODate(dateString: string): Date {
+  if (typeof dateString !== "string" || dateString.length !== 10) {
+    throw new Error("Invalid date format. Expected YYYY-MM-DD.");
+  }
+
+  if (dateString[4] !== "-" || dateString[7] !== "-") {
+    throw new Error("Invalid date format. Expected YYYY-MM-DD.");
+  }
+
+  const date = new Date(dateString + "T00:00:00Z");
+
+  if (isNaN(date.getTime())) {
+    throw new Error("Invalid date value.");
+  }
+
+  const year = date.getUTCFullYear().toString();
+  const month = (date.getUTCMonth() + 1).toString().padStart(2, "0");
+  const day = date.getUTCDate().toString().padStart(2, "0");
+
+  const reconstructed = `${year}-${month}-${day}`;
+
+  if (reconstructed !== dateString) {
+    throw new Error("Invalid calendar date.");
+  }
+
+  return date;
+}
+
 export function groupEntriesByDay(
     entries: HealthEntry[]
   ): Record<string, HealthEntry[]> {
@@ -63,3 +91,56 @@ export function groupEntriesByDay(
       metrics: metrics as DailyHealthSummary["metrics"],
     };
   }
+
+  export function getWeeklySummary(
+    entries: HealthEntry[],
+    weekStart: string,
+  ) {
+  // 1. Validate weekStart format
+  // - Ensure weekStart is in "YYYY-MM-DD"
+  // - Treat it as the first day of the week (authoritative)
+   const startDate = parseISODate(weekStart);
+  
+
+  // 2. Generate the 7-day date range for the week
+  // - Starting from weekStart
+  // - Create an array of 7 consecutive dates
+  // - Each date should be in "YYYY-MM-DD" format
+  // - Include days even if no entries exist
+
+  // 3. Initialize an empty weekly metrics accumulator
+  // - Keyed by HealthMetricType
+  // - For each metric, prepare:
+  //   - total = 0
+  //   - min = undefined
+  //   - max = undefined
+  //   - dayCount = 0
+
+  // 4. Loop through each day in the 7-day range
+  // - For each day:
+  //   - Call getDailySummary(entries, currentDay)
+  //   - If no metrics exist for that day, continue
+
+  // 5. Accumulate daily metrics into weekly metrics
+  // - For each metric in the daily summary:
+  //   - Add daily total to weekly total
+  //   - Update weekly min if smaller
+  //   - Update weekly max if larger
+  //   - Increment dayCount for that metric
+
+  // 6. Finalize weekly averages
+  // - For each metric:
+  //   - If dayCount > 0:
+  //     - weeklyAverage = weeklyTotal / dayCount
+  //   - Avoid division by zero
+
+  // 7. Construct the weekly summary return object
+  // - Include:
+  //   - weekStart
+  //   - weekEnd (weekStart + 6 days)
+  //   - metrics grouped by HealthMetricType
+  // - Keep structure consistent with DailyHealthSummary
+
+  // 8. Return the finalized weekly summary
+}
+  
