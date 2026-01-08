@@ -107,6 +107,18 @@ export function groupEntriesByDay(
   // - Create an array of 7 consecutive dates
   // - Each date should be in "YYYY-MM-DD" format
   // - Include days even if no entries exist
+  const dates: string[] = [];
+
+  const start = new Date(weekStart + "T00:00:00Z");
+
+  for (let i = 0; i < 7; i++) {
+    const current = new Date(start);
+    current.setUTCDate(start.getUTCDate() + i);
+    dates.push(current.toISOString().split("T")[0]);
+  }
+
+
+
 
   // 3. Initialize an empty weekly metrics accumulator
   // - Keyed by HealthMetricType
