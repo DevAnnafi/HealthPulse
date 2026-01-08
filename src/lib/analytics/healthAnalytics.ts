@@ -139,36 +139,89 @@ export function groupEntriesByDay(
     Record<HealthMetricType, WeeklyMetricAccumulator>
   > = {};
   
-
- 
-
-
-
   // 4. Loop through each day in the 7-day range
   // - For each day:
   //   - Call getDailySummary(entries, currentDay)
   //   - If no metrics exist for that day, continue
+  for(let i = 0; i < 7; i++) {
+    // 1. Get the current date string from the dates array
+    //    - This represents one calendar day in the week
+     const CurrentDay = dates[i];
 
-  // 5. Accumulate daily metrics into weekly metrics
-  // - For each metric in the daily summary:
-  //   - Add daily total to weekly total
-  //   - Update weekly min if smaller
-  //   - Update weekly max if larger
-  //   - Increment dayCount for that metric
+      // 2. Call getDailySummary using:
+      //    - the full entries array
+      //    - the current day string
+     const dailySummary = getDailySummary(entries, CurrentDay);
 
-  // 6. Finalize weekly averages
-  // - For each metric:
-  //   - If dayCount > 0:
-  //     - weeklyAverage = weeklyTotal / dayCount
-  //   - Avoid division by zero
+      // 3. Check if the daily summary has any metrics
+      //    - If the metrics object is empty:
+      //      - Skip this day entirely
+      //      - Do NOT increment any counters
+      if (Object.keys(dailySummary.metrics).length === 0) {
+        continue;
+      }
+      
+     // 4. Iterate over each metric in the daily summary
+    for (const metric in dailySummary.metrics) {
+      const metricKey = metric as HealthMetricType;
+      const dailyMetric = dailySummary.metrics[metricKey]!;
 
-  // 7. Construct the weekly summary return object
-  // - Include:
-  //   - weekStart
-  //   - weekEnd (weekStart + 6 days)
-  //   - metrics grouped by HealthMetricType
-  // - Keep structure consistent with DailyHealthSummary
+      // 5. Initialize weekly accumulator if it does not exist
+      if (!weeklyMetrics[metricKey]) {
+        weeklyMetrics[metricKey] = {
+          total: 0,
+          min: undefined,
+          max: undefined,
+          dayCount: 0,
+        };
+      }
 
-  // 8. Return the finalized weekly summary
+      const weeklyMetric = weeklyMetrics[metricKey]!;
+
+      // 6. Merge daily data into weekly accumulator
+      weeklyMetric.total += dailyMetric.total ?? 0;
+
+      if (
+        weeklyMetric.min === undefined ||
+        dailyMetric.min! < weeklyMetric.min
+      ) {
+        weeklyMetric.min = dailyMetric.min;
+      }
+
+      if (
+        weeklyMetric.max === undefined ||
+        dailyMetric.max! > weeklyMetric.max
+      ) {
+        weeklyMetric.max = dailyMetric.max;
+      }
+
+      // 7. Increment dayCount ONCE per day for this metric
+      weeklyMetric.dayCount += 1;
+}
+
+  }
+    
+
+    // 5. Accumulate daily metrics into weekly metrics
+    // - For each metric in the daily summary:
+    //   - Add daily total to weekly total
+    //   - Update weekly min if smaller
+    //   - Update weekly max if larger
+    //   - Increment dayCount for that metric
+
+    // 6. Finalize weekly averages
+    // - For each metric:
+    //   - If dayCount > 0:
+    //     - weeklyAverage = weeklyTotal / dayCount
+    //   - Avoid division by zero
+
+    // 7. Construct the weekly summary return object
+    // - Include:
+    //   - weekStart
+    //   - weekEnd (weekStart + 6 days)
+    //   - metrics grouped by HealthMetricType
+    // - Keep structure consistent with DailyHealthSummary
+
+    // 8. Return the finalized weekly summary
 }
   
