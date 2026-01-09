@@ -1,10 +1,14 @@
 'use client';
 
 import Link from "next/link";
-import Symptoms from "@/app/symptoms/page";
 import { motion } from "framer-motion";
+import type { Variants } from "framer-motion";
 
-const container = {
+/* ---------------------------------------------
+   Motion Variants (Typed)
+--------------------------------------------- */
+
+const container: Variants = {
   hidden: { opacity: 0 },
   show: {
     opacity: 1,
@@ -14,7 +18,7 @@ const container = {
   },
 };
 
-const item = {
+const item: Variants = {
   hidden: { opacity: 0, y: 24 },
   show: {
     opacity: 1,
@@ -23,7 +27,7 @@ const item = {
   },
 };
 
-const card = {
+const card: Variants = {
   hidden: { opacity: 0, y: 30, scale: 0.96 },
   show: {
     opacity: 1,
@@ -33,13 +37,19 @@ const card = {
   },
 };
 
+/* ---------------------------------------------
+   Page
+--------------------------------------------- */
+
 export default function Home() {
   return (
     <main className="relative flex min-h-screen flex-col items-center justify-center overflow-hidden bg-gradient-to-br from-background via-background to-muted px-6 text-center">
 
-      {/* Background layers */}
-      <div className="pointer-events-none absolute inset-0 -z-30 bg-[url('/noise.png')] opacity-[0.03]" />
+      {/* ---------------------------------------------
+         Background Layers (No Noise)
+      --------------------------------------------- */}
 
+      {/* Subtle grid */}
       <div
         className="pointer-events-none absolute inset-0 -z-20 opacity-[0.04]"
         style={{
@@ -49,6 +59,7 @@ export default function Home() {
         }}
       />
 
+      {/* Glow orbs */}
       <div className="pointer-events-none absolute inset-0 -z-10">
         <div className="absolute top-1/4 left-1/3 h-[500px] w-[500px] rounded-full bg-cyan-400/20 blur-3xl" />
         <div className="absolute bottom-1/4 right-1/3 h-[500px] w-[500px] rounded-full bg-emerald-400/20 blur-3xl" />
