@@ -98,6 +98,57 @@ See [ARCHITECTURE.md](./docs/ARCHITECTURE.md) for detailed structure.
 - Professional PDF export
 - Shareable reports
 
+## 🏆 Weekly Goal Streaks & Progress Tracking
+
+HealthPulse includes a **goal-aware weekly streak system** that helps users measure **consistency over time**, not just raw daily numbers.
+
+---
+
+### What Is a Weekly Streak?
+
+A **weekly streak** represents the number of **consecutive weeks (including the current week)** in which a user met their goal for a given health metric (e.g. steps, sleep, calories).
+
+Key rules:
+- Streaks reset immediately on a missed week  
+- No partial credit is given  
+- Each metric is evaluated independently  
+
+**Example:**  
+If a user meets their step goal for 4 weeks in a row, their streak is **4 weeks**.
+
+---
+
+### Metric-Specific Goal Rules
+
+Different health metrics require different evaluation logic. HealthPulse applies **domain-aware comparison rules** per metric:
+
+| Metric        | Rule | Goal Condition |
+|--------------|------|----------------|
+| Steps        | min  | Weekly average ≥ goal |
+| Sleep        | min  | Weekly average ≥ goal |
+| Calories     | max  | Weekly average ≤ goal |
+| Heart Rate   | max  | Weekly average ≤ goal |
+| Weight       | max  | Weekly average ≤ goal |
+
+These rules are centrally defined and reused across analytics.
+
+---
+
+### How It Works (Under the Hood)
+
+1. Health entries are grouped by day and summarized into **weekly averages**
+2. Each week is evaluated against the user’s goal using the metric’s comparison rule
+3. Weeks are traversed **backwards in time**
+4. The streak increments for each consecutive “hit”
+5. The streak stops immediately on a miss or missing data
+
+This logic is implemented as a **pure analytics function**:
+
+```ts
+getWeeklyStreak(entries, metric, goal, weekStart)
+
+
+
 ## Contributing
 
 See [CONTRIBUTING.md](./CONTRIBUTING.md)
