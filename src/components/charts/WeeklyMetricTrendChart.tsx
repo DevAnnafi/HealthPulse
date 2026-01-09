@@ -1,5 +1,5 @@
 import { useHealthStore } from "@/store/healthStore";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { HealthMetricType } from "@/types/health";
 import { getWeeklyTrend } from "@/lib/analytics/healthAnalytics";
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, ReferenceLine, } from "recharts";
@@ -62,7 +62,18 @@ export function WeeklyMetricTrendChart() {
   const trendData = getWeeklyTrend(entries, weekStart, metric);
 
   const goals = useHealthGoalsStore((state) => state.goals);
+  const setGoal = useHealthGoalsStore((state) => state.setGoal);
+  const clearGoal = useHealthGoalsStore((state) => state.clearGoal);
+
   const currentGoal = goals[metric];
+
+  const [goalInput, setGoalInput] = useState<string>(
+    currentGoal !== undefined ? String(currentGoal) : ""
+  );
+
+  useEffect(() => {
+    setGoalInput(currentGoal !== undefined ? String(currentGoal) : "");
+  }, [currentGoal, metric]);
 
   return (
     <div className="w-full">
@@ -83,6 +94,42 @@ export function WeeklyMetricTrendChart() {
           ))}
         </select>
       </div>
+
+      <div className="flex items-center gap-2 mb-4">
+        <label className="text-sm font-medium text-muted-foreground">
+          Goal
+        </label>
+
+        <input
+          type="number"
+          value={goalInput}
+          onChange={(e) => setGoalInput(e.target.value)}
+          className="border rounded px-2 py-1 text-sm w-28 bg-background"
+          placeholder="Enter goal"
+        />
+
+        <button
+          onClick={() => {
+            const value = Number(goalInput);
+            if (!isNaN(value) && value > 0) {
+              setGoal(metric, value);
+            }
+          }}
+          className="px-3 py-1 text-sm rounded bg-primary text-primary-foreground"
+        >
+          Save
+        </button>
+
+        {currentGoal !== undefined && (
+          <button
+            onClick={() => clearGoal(metric)}
+            className="px-3 py-1 text-sm rounded border text-muted-foreground"
+          >
+            Clear
+          </button>
+        )}
+      </div>
+
 
       {/* Chart */}
       <div className="w-full h-64">
