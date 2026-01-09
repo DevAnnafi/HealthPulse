@@ -2,16 +2,8 @@ import { useHealthStore } from "@/store/healthStore";
 import { useState } from "react";
 import { HealthMetricType } from "@/types/health";
 import { getWeeklyTrend } from "@/lib/analytics/healthAnalytics";
-import {
-  LineChart,
-  Line,
-  XAxis,
-  YAxis,
-  Tooltip,
-  ResponsiveContainer,
-  CartesianGrid,
-  ReferenceLine,
-} from "recharts";
+import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, ReferenceLine, } from "recharts";
+import { useHealthGoalsStore } from "@/store/healthSettingsStore";
 
 /* ---------------------------------------------
    Goal Line Helper
@@ -69,16 +61,8 @@ export function WeeklyMetricTrendChart() {
   // Analytics
   const trendData = getWeeklyTrend(entries, weekStart, metric);
 
-  // Metric → goal mapping (simple, explicit)
-  const GOALS: Partial<Record<HealthMetricType, number>> = {
-    steps: 10000,
-    sleep: 8,
-    calories: 2200,
-    heart_rate: 70,
-    weight: 180,
-  };
-
-  const currentGoal = GOALS[metric];
+  const goals = useHealthGoalsStore((state) => state.goals);
+  const currentGoal = goals[metric];
 
   return (
     <div className="w-full">
