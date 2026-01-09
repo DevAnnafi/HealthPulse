@@ -4,6 +4,8 @@ import { HealthMetricType } from "@/types/health";
 import { getWeeklyTrend } from "@/lib/analytics/healthAnalytics";
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, ReferenceLine, } from "recharts";
 import { useHealthGoalsStore } from "@/store/healthSettingsStore";
+import { getWeeklyStreak } from "@/lib/analytics/healthAnalytics";
+
 
 /* ---------------------------------------------
    Goal Line Helper
@@ -51,9 +53,10 @@ export function WeeklyMetricTrendChart() {
     { label: "Weight", value: "weight" },
   ];
 
+
   // Select only `entries`
   const entries = useHealthStore((state) => state.entries);
-
+  
   // UI state
   const [metric, setMetric] = useState<HealthMetricType>("steps");
   const [weekStart, setWeekStart] = useState<string>("2026-01-01");
@@ -74,6 +77,15 @@ export function WeeklyMetricTrendChart() {
   useEffect(() => {
     setGoalInput(currentGoal !== undefined ? String(currentGoal) : "");
   }, [currentGoal, metric]);
+
+  const streak = getWeeklyStreak(
+    entries,
+    metric,
+    currentGoal,
+    weekStart,
+    52 // safety cap: 1 year
+  );
+  
 
   return (
     <div className="w-full">
@@ -130,6 +142,11 @@ export function WeeklyMetricTrendChart() {
         )}
       </div>
 
+      {streak > 0 && (
+        <div className="mb-2 inline-flex items-center gap-2 rounded-full bg-emerald-100 px-3 py-1 text-sm font-medium text-emerald-800">
+          🏆 {streak}-week streak
+        </div>
+      )}
 
       {/* Chart */}
       <div className="w-full h-64">
