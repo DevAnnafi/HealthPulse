@@ -7,6 +7,12 @@ import { stringify } from "querystring";
 
 export function WeeklyMetricTrendChart() {
 
+    function formatDayLabel(dateString: string): string {
+        const date = new Date(dateString + "T00:00:00Z");
+        return date.toLocaleDateString("en-US", { weekday: "short" });
+      }
+      
+
     // Metric Options
     const METRIC_OPTIONS: {label: string; value: HealthMetricType } [] = [
         { label: "Steps", value: "steps" },
@@ -58,7 +64,10 @@ export function WeeklyMetricTrendChart() {
                   <ResponsiveContainer width="100%" height="100%">
                     <LineChart data={trendDate}>
                       <CartesianGrid strokeDasharray="3 3" />
-                      <XAxis dataKey="date" />
+                      <XAxis
+                        dataKey="date"
+                        tickFormatter={formatDayLabel}
+                        />
                       <YAxis />
                       <Tooltip />
                       <Line
