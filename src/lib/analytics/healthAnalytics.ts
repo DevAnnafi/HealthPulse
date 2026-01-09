@@ -57,6 +57,78 @@ export function evaluateWeeklyGoal(
 
 }
 
+// ---------------------------------------------
+// Weekly Streak Tracking
+// ---------------------------------------------
+
+// Calculate the current weekly streak for a given metric
+// A streak is defined as the number of consecutive weeks
+// (including the current week) where the goal was met.
+//
+// Inputs:
+// - entries: all health entries
+// - metric: which HealthMetricType to evaluate
+// - goal: the user-defined goal for this metric
+// - startWeek: YYYY-MM-DD string representing the current week start
+// - maxWeeks: safety limit to prevent infinite loops
+//
+export function getWeeklyStreak(
+  entries: HealthEntry[],
+  metric: HealthMetricType,
+  goal: number | undefined,
+  startWeek: string,
+  maxWeeks: number
+): number {
+  let streakCount = 0;
+
+  for (let i = 0; i < maxWeeks; i++) {
+    const weekDate = new Date(startWeek + "T00:00:00Z");
+    weekDate.setUTCDate(weekDate.getUTCDate() - i * 7);
+
+    const currentWeekStart = weekDate.toISOString().split("T")[0];
+
+    const weeklySummary = getWeeklySummary(entries, currentWeekStart);
+    const weeklyAverage = weeklySummary.metrics[metric]?.average;
+
+    const result = evaluateWeeklyGoal(
+      metric,
+      weeklyAverage,
+      goal
+    );
+
+    if (result === "hit") {
+      streakCount += 1;
+    } else {
+      break;
+    }
+  }
+
+  return streakCount;
+}
+
+// Logic:
+// 1. Initialize streakCount = 0
+//
+// 2. For each week, starting from startWeek and moving backwards:
+//    a. Compute the weekly summary for that week
+//    b. Extract the weekly average for the metric
+//    c. Evaluate the goal using evaluateWeeklyGoal
+//
+// 3. If result === "hit":
+//    - increment streakCount
+//    - move to the previous week (subtract 7 days)
+//
+// 4. If result === "miss" or "no-goal":
+//    - stop iteration
+//
+// 5. Return streakCount
+//
+// Notes:
+// - Streak resets immediately on a miss
+// - No partial credit
+// - maxWeeks prevents unbounded looping
+
+
 /* ---------------------------------------------
    Time Utilities
 --------------------------------------------- */
