@@ -208,3 +208,44 @@ export function getWeeklySummary(
     metrics: finalizedMetrics,
   };
 }
+
+/* ---------------------------------------------
+   Weekly Trend
+--------------------------------------------- */
+export function getWeeklyTrend(
+  entries: HealthEntry[],
+  weekStart: string,
+  metric: HealthMetricType
+): { date: string; value: number }[] {
+  // Validate weekStart
+  parseISODate(weekStart);
+
+  // Generate 7-day range
+  const dates: string[] = [];
+  const start = new Date(weekStart + "T00:00:00Z");
+
+  for (let i = 0; i < 7; i++) {
+    const current = new Date(start);
+    current.setUTCDate(start.getUTCDate() + i);
+    dates.push(current.toISOString().split("T")[0]);
+  }
+
+  // Build trend data
+  const trend: { date: string; value: number }[] = [];
+
+  for (const date of dates) {
+    const dailySummary = getDailySummary(entries, date);
+    const metricData = dailySummary.metrics[metric];
+
+    if (!metricData || metricData.average === undefined) {
+      continue;
+    }
+
+    trend.push({
+      date,
+      value: metricData.average,
+    });
+  }
+
+  return trend;
+}
