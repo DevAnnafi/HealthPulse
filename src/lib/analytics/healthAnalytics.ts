@@ -1,4 +1,80 @@
 import { HealthEntry, HealthMetricType, DailyHealthSummary } from "@/types/health";
+import { Goal } from "lucide-react";
+
+// ---------------------------------------------
+// Metric Comparison Rules
+// ---------------------------------------------
+
+// Define how each metric should be evaluated
+// - "min": weeklyAverage must be >= goal
+// - "max": weeklyAverage must be <= goal
+// This configuration is static and domain-driven
+export const METRIC_COMPARISON_RULES: Record<
+  HealthMetricType,
+  "min" | "max"
+> = {
+  steps: "min",
+  sleep: "min",
+  calories: "max",
+  heart_rate: "max",
+  weight: "max",
+};
+
+
+
+// ---------------------------------------------
+// Weekly Goal Evaluation (Per-Metric Rules)
+// ---------------------------------------------
+
+// Evaluate whether a weekly goal is met for a given metric
+// Inputs:
+// - metric: which HealthMetricType is being evaluated
+// - weeklyAverage: the computed weekly average for that metric
+// - goal: the user-defined goal value
+export type GoalStatus = "hit" | "miss" | "no-goal"
+
+export function evaluateWeeklyGoal(
+  metric: HealthMetricType,
+  weeklyAverage: number | undefined,
+  goal: number | undefined
+): GoalStatus {
+
+  if (weeklyAverage === undefined || goal === undefined) {
+    return "no-goal";
+  }
+
+  const rule = METRIC_COMPARISON_RULES[metric];
+
+  if (rule === "min") {
+    return weeklyAverage >= goal ? "hit" : "miss";
+  }
+
+  if (rule === "max") {
+    return weeklyAverage <= goal ? "hit" : "miss";
+  }
+
+  return "no-goal";
+
+
+}
+
+// Logic:
+// 1. If weeklyAverage or goal is undefined:
+//    - return "no-goal"
+//
+// 2. Look up the comparison rule for the metric
+//
+// 3. If comparison rule is "min":
+//    - return "hit" if weeklyAverage >= goal
+//    - otherwise return "miss"
+//
+// 4. If comparison rule is "max":
+//    - return "hit" if weeklyAverage <= goal
+//    - otherwise return "miss"
+//
+// Output:
+// - "hit" | "miss" | "no-goal"
+
 
 /* ---------------------------------------------
    Time Utilities
@@ -249,3 +325,6 @@ export function getWeeklyTrend(
 
   return trend;
 }
+
+
+
