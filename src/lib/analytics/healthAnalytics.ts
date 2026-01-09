@@ -1,8 +1,12 @@
 import { HealthEntry, HealthMetricType, DailyHealthSummary } from "@/types/health";
 
+/* ---------------------------------------------
+   Time Utilities
+--------------------------------------------- */
+
 export function normalizeDate(timestamp: number): string {
-    const date = new Date(timestamp);
-    return date.toISOString().split("T")[0];
+  const date = new Date(timestamp);
+  return date.toISOString().split("T")[0];
 }
 
 function parseISODate(dateString: string): Date {
@@ -33,82 +37,85 @@ function parseISODate(dateString: string): Date {
   return date;
 }
 
+/* ---------------------------------------------
+   Grouping
+--------------------------------------------- */
+
 export function groupEntriesByDay(
-    entries: HealthEntry[]
-  ): Record<string, HealthEntry[]> {
-    return entries.reduce<Record<string, HealthEntry[]>>((acc, entry) => {
-      const day = normalizeDate(entry.timestamp);
-  
-      if (!acc[day]) {
-        acc[day] = [];
-      }
-  
-      acc[day].push(entry);
-      return acc;
-    }, {});
+  entries: HealthEntry[]
+): Record<string, HealthEntry[]> {
+  return entries.reduce<Record<string, HealthEntry[]>>((acc, entry) => {
+    const day = normalizeDate(entry.timestamp);
+
+    if (!acc[day]) {
+      acc[day] = [];
+    }
+
+    acc[day].push(entry);
+    return acc;
+  }, {});
+}
+
+/* ---------------------------------------------
+   Daily Analytics
+--------------------------------------------- */
+
+export function getDailySummary(
+  entries: HealthEntry[],
+  date: string
+): DailyHealthSummary {
+  const groupedByDay = groupEntriesByDay(entries);
+  const dayEntries = groupedByDay[date] ?? [];
+
+  const metrics: Partial<DailyHealthSummary["metrics"]> = {};
+
+  for (const entry of dayEntries) {
+    const metric = entry.metric;
+
+    if (!metrics[metric]) {
+      metrics[metric] = {
+        total: 0,
+        min: entry.value,
+        max: entry.value,
+        average: 0,
+      };
+    }
+
+    const stats = metrics[metric]!;
+
+    stats.total = (stats.total ?? 0) + entry.value;
+    stats.min = Math.min(stats.min ?? entry.value, entry.value);
+    stats.max = Math.max(stats.max ?? entry.value, entry.value);
   }
 
-  export function getDailySummary(
-    entries: HealthEntry[],
-    date: string
-  ): DailyHealthSummary {
-    const groupedByDay = groupEntriesByDay(entries);
-    const dayEntries = groupedByDay[date] ?? [];
-  
-    const metrics: Partial<DailyHealthSummary["metrics"]> = {};
-  
-    for (const entry of dayEntries) {
-      const metric = entry.metric;
-  
-      if (!metrics[metric]) {
-        metrics[metric] = {
-          total: 0,
-          min: entry.value,
-          max: entry.value,
-          average: 0,
-        };
-      }
-  
-      const stats = metrics[metric]!;
-  
-      stats.total = (stats.total ?? 0) + entry.value;
-      stats.min = Math.min(stats.min ?? entry.value, entry.value);
-      stats.max = Math.max(stats.max ?? entry.value, entry.value);
-    }
-  
-    // Finalize averages
-    for (const metric in metrics) {
-      const metricEntries = dayEntries.filter(
-        (e) => e.metric === metric
-      );
-  
-      metrics[metric as HealthMetricType]!.average =
-        metrics[metric as HealthMetricType]!.total! / metricEntries.length;
-    }
-  
-    return {
-      date,
-      metrics: metrics as DailyHealthSummary["metrics"],
-    };
+  for (const metric in metrics) {
+    const metricEntries = dayEntries.filter(
+      (e) => e.metric === metric
+    );
+
+    metrics[metric as HealthMetricType]!.average =
+      metrics[metric as HealthMetricType]!.total! / metricEntries.length;
   }
 
-  export function getWeeklySummary(
-    entries: HealthEntry[],
-    weekStart: string,
-  ) {
-  // 1. Validate weekStart format
-  // - Ensure weekStart is in "YYYY-MM-DD"
-  // - Treat it as the first day of the week (authoritative)
-   const startDate = parseISODate(weekStart);
-  
+  return {
+    date,
+    metrics: metrics as DailyHealthSummary["metrics"],
+  };
+}
 
-  // 2. Generate the 7-day date range for the week
-  // - Starting from weekStart
-  // - Create an array of 7 consecutive dates
-  // - Each date should be in "YYYY-MM-DD" format
-  // - Include days even if no entries exist
+/* ---------------------------------------------
+   Weekly Analytics
+--------------------------------------------- */
+
+export function getWeeklySummary(
+  entries: HealthEntry[],
+  weekStart: string
+) {
+  // Validate input
+  parseISODate(weekStart);
+
+  // Generate 7-day date range
   const dates: string[] = [];
-
   const start = new Date(weekStart + "T00:00:00Z");
 
   for (let i = 0; i < 7; i++) {
@@ -117,56 +124,31 @@ export function groupEntriesByDay(
     dates.push(current.toISOString().split("T")[0]);
   }
 
-  // 3. Initialize an empty weekly metrics accumulator
-  // - Keyed by HealthMetricType
-  // Create a variable to hold weekly metric accumulators
-  // This is an object keyed by HealthMetricType
-  // Each value is an accumulator object (total, min, max, dayCount)
-  // Start with an empty object
-  // - For each metric, prepare:
-  //   - total = 0
-  //   - min = undefined
-  //   - max = undefined
-  //   - dayCount = 0
+  // Weekly accumulator
   type WeeklyMetricAccumulator = {
     total: number;
     min?: number;
     max?: number;
     dayCount: number;
   };
-  
+
   const weeklyMetrics: Partial<
     Record<HealthMetricType, WeeklyMetricAccumulator>
   > = {};
-  
-  // 4. Loop through each day in the 7-day range
-  // - For each day:
-  //   - Call getDailySummary(entries, currentDay)
-  //   - If no metrics exist for that day, continue
-  for(let i = 0; i < 7; i++) {
-    // 1. Get the current date string from the dates array
-    //    - This represents one calendar day in the week
-     const CurrentDay = dates[i];
 
-      // 2. Call getDailySummary using:
-      //    - the full entries array
-      //    - the current day string
-     const dailySummary = getDailySummary(entries, CurrentDay);
+  // Aggregate daily summaries
+  for (let i = 0; i < dates.length; i++) {
+    const currentDay = dates[i];
+    const dailySummary = getDailySummary(entries, currentDay);
 
-      // 3. Check if the daily summary has any metrics
-      //    - If the metrics object is empty:
-      //      - Skip this day entirely
-      //      - Do NOT increment any counters
-      if (Object.keys(dailySummary.metrics).length === 0) {
-        continue;
-      }
-      
-     // 4. Iterate over each metric in the daily summary
+    if (Object.keys(dailySummary.metrics).length === 0) {
+      continue;
+    }
+
     for (const metric in dailySummary.metrics) {
       const metricKey = metric as HealthMetricType;
       const dailyMetric = dailySummary.metrics[metricKey]!;
 
-      // 5. Initialize weekly accumulator if it does not exist
       if (!weeklyMetrics[metricKey]) {
         weeklyMetrics[metricKey] = {
           total: 0,
@@ -178,7 +160,6 @@ export function groupEntriesByDay(
 
       const weeklyMetric = weeklyMetrics[metricKey]!;
 
-      // 6. Merge daily data into weekly accumulator
       weeklyMetric.total += dailyMetric.total ?? 0;
 
       if (
@@ -195,33 +176,35 @@ export function groupEntriesByDay(
         weeklyMetric.max = dailyMetric.max;
       }
 
-      // 7. Increment dayCount ONCE per day for this metric
       weeklyMetric.dayCount += 1;
-}
-
+    }
   }
-    
 
-    // 5. Accumulate daily metrics into weekly metrics
-    // - For each metric in the daily summary:
-    //   - Add daily total to weekly total
-    //   - Update weekly min if smaller
-    //   - Update weekly max if larger
-    //   - Increment dayCount for that metric
+  // Finalize weekly averages
+  const finalizedMetrics = {} as DailyHealthSummary["metrics"];
 
-    // 6. Finalize weekly averages
-    // - For each metric:
-    //   - If dayCount > 0:
-    //     - weeklyAverage = weeklyTotal / dayCount
-    //   - Avoid division by zero
+  for (const metric in weeklyMetrics) {
+    const metricKey = metric as HealthMetricType;
+    const data = weeklyMetrics[metricKey]!;
 
-    // 7. Construct the weekly summary return object
-    // - Include:
-    //   - weekStart
-    //   - weekEnd (weekStart + 6 days)
-    //   - metrics grouped by HealthMetricType
-    // - Keep structure consistent with DailyHealthSummary
+    if (data.dayCount === 0) continue;
 
-    // 8. Return the finalized weekly summary
+    finalizedMetrics[metricKey] = {
+      total: data.total,
+      min: data.min,
+      max: data.max,
+      average: data.total / data.dayCount,
+    };
+  }
+
+  // Compute weekEnd
+  const weekEndDate = new Date(weekStart + "T00:00:00Z");
+  weekEndDate.setUTCDate(weekEndDate.getUTCDate() + 6);
+  const weekEnd = weekEndDate.toISOString().split("T")[0];
+
+  return {
+    weekStart,
+    weekEnd,
+    metrics: finalizedMetrics,
+  };
 }
-  
