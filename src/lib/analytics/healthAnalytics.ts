@@ -55,26 +55,7 @@ export function evaluateWeeklyGoal(
 
   return "no-goal";
 
-
 }
-
-// Logic:
-// 1. If weeklyAverage or goal is undefined:
-//    - return "no-goal"
-//
-// 2. Look up the comparison rule for the metric
-//
-// 3. If comparison rule is "min":
-//    - return "hit" if weeklyAverage >= goal
-//    - otherwise return "miss"
-//
-// 4. If comparison rule is "max":
-//    - return "hit" if weeklyAverage <= goal
-//    - otherwise return "miss"
-//
-// Output:
-// - "hit" | "miss" | "no-goal"
-
 
 /* ---------------------------------------------
    Time Utilities
