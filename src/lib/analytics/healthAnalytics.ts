@@ -106,27 +106,6 @@ export function getWeeklyStreak(
   return streakCount;
 }
 
-// Logic:
-// 1. Initialize streakCount = 0
-//
-// 2. For each week, starting from startWeek and moving backwards:
-//    a. Compute the weekly summary for that week
-//    b. Extract the weekly average for the metric
-//    c. Evaluate the goal using evaluateWeeklyGoal
-//
-// 3. If result === "hit":
-//    - increment streakCount
-//    - move to the previous week (subtract 7 days)
-//
-// 4. If result === "miss" or "no-goal":
-//    - stop iteration
-//
-// 5. Return streakCount
-//
-// Notes:
-// - Streak resets immediately on a miss
-// - No partial credit
-// - maxWeeks prevents unbounded looping
 
 
 /* ---------------------------------------------
