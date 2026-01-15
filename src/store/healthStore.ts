@@ -3,6 +3,8 @@ import { persist } from "zustand/middleware";
 import { HealthEntry } from "@/types/health";
 import { validateHealthEntry } from "@/lib/validation/healthValidation";
 import { normalizeDate } from "@/lib/analytics/healthAnalytics";
+import { selectTodayEntries } from "@/lib/selectors/selectTodayEntries";
+import { selectTodayEntryForMetric } from "@/lib/selectors/selectTodayEntryForMetric";
 
 interface HealthState {
   entries: HealthEntry[];
@@ -32,22 +34,18 @@ export const useHealthStore = create<HealthState>()(
           }
         
           set((state) => {
-            const entryDay = normalizeDate(entry.timestamp);
+            const existing = selectTodayEntryForMetric(
+              state.entries,
+              entry.metric
+            );
         
-            const duplicateExists = state.entries.some((existing) => {
-              return (
-                existing.metric === entry.metric &&
-                normalizeDate(existing.timestamp) === entryDay
-              );
-            });
-        
-            if (duplicateExists) {
+            if (existing) {
               return {
                 ...state,
                 validationError: "You already logged this metric today.",
               };
             }
-        
+                    
             return {
               ...state,
               validationError: null,
