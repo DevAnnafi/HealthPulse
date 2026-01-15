@@ -26,26 +26,32 @@ export const useHealthStore = create<HealthState>()(
         set({ validationError: null }),
 
         addEntry: (entry) => {
-          const result = validateHealthEntry(entry);
-        
-          if (!result.valid) {
-            set({ validationError: result.error });
-            return;
-          }
-        
           set((state) => {
-            const existing = selectTodayEntryForMetric(
-              state.entries,
-              entry.metric
+            // 1. Validate entry
+            const result = validateHealthEntry(entry);
+            if (!result.valid) {
+              return {
+                ...state,
+                validationError: result.error,
+              };
+            }
+        
+            // 2. Check duplicate (same metric, same day)
+            const entryDay = normalizeDate(entry.timestamp);
+            const duplicateExists = state.entries.some(
+              (existing) =>
+                existing.metric === entry.metric &&
+                normalizeDate(existing.timestamp) === entryDay
             );
         
-            if (existing) {
+            if (duplicateExists) {
               return {
                 ...state,
                 validationError: "You already logged this metric today.",
               };
             }
-                    
+        
+            // 3. Insert entry
             return {
               ...state,
               validationError: null,
@@ -53,7 +59,7 @@ export const useHealthStore = create<HealthState>()(
             };
           });
         },
-        
+                
 
       deleteEntry: (id) =>
         set((state) => ({
