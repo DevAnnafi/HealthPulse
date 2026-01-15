@@ -1,73 +1,74 @@
 "use client";
 
 import { useState } from "react";
-import { submitSymptom } from "@/services/symptomService";
 import { useHealthStore } from "@/store/healthStore";
-import { HealthEntry, HealthMetricType } from "@/types/health";
+import { HealthEntry } from "@/types/health";
+import { selectTodayEntryForMetric } from "@/lib/selectors/selectTodayEntryForMetric";
 
 export default function SymptomForm() {
+  // Store state
+  const entries = useHealthStore((state) => state.entries);
+  const addEntry = useHealthStore((state) => state.addEntry);
   const validationError = useHealthStore((state) => state.validationError);
   const clearValidationError = useHealthStore((state) => state.clearValidationError);
-  const addEntry = useHealthStore((state) => state.addEntry);
+
+  // UI state
   const [symptom, setSymptom] = useState("");
   const [severity, setSeverity] = useState(1);
   const [durationDays, setDurationDays] = useState(1);
+  const [notes, setNotes] = useState("");
   const [error, setError] = useState("");
-  const [notes, setNotes]= useState("");
   const [success, setSuccess] = useState(false);
+
+  // Metric for this form (hardcoded for now)
+  const metric = "steps";
+
+  // Selector-driven derived state
+  const existingEntryToday = selectTodayEntryForMetric(entries, metric);
+  const hasLoggedToday = Boolean(existingEntryToday);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-  
-    // UI-level validation (keep this)
+
+    if (hasLoggedToday) return;
+
     if (!symptom.trim()) {
       setError("Symptom is required.");
-      setSuccess(false);
       return;
     }
-  
+
     if (severity < 1 || severity > 10) {
       setError("Severity must be between 1 and 10.");
-      setSuccess(false);
       return;
     }
-  
+
     if (durationDays < 1) {
       setError("Duration must be at least 1 day.");
-      setSuccess(false);
       return;
     }
-  
-    // Build a HealthEntry (DOMAIN object)
+
     const entry: HealthEntry = {
       id: crypto.randomUUID(),
-      metric: "steps",            // hardcoded for now (OK for Day 6)
+      metric,
       value: severity,
       unit: "",
       timestamp: Date.now(),
     };
-  
-    // Delegate validation + persistence to the store
+
     addEntry(entry);
-  
-    // If store validation failed, UI will show validationError
-    if (validationError) {
-      setSuccess(false);
-      return;
-    }
-  
-    // Success path
+
+    if (validationError) return;
+
     setError("");
     clearValidationError();
     setSuccess(true);
-  
-    // Reset form
+
     setSymptom("");
     setSeverity(1);
     setDurationDays(1);
     setNotes("");
   }
-  
+
   return (
     <form
       onSubmit={handleSubmit}
@@ -77,106 +78,44 @@ export default function SymptomForm() {
         Log a Symptom
       </h2>
 
-      {success && (
-        <p className="text-sm text-green-700">
-          Symptom logged successfully.
-        </p>
-      )}
+      {success && <p className="text-sm text-green-700">Symptom logged successfully.</p>}
+      {error && <p className="text-sm text-red-700">{error}</p>}
+      {validationError && <p className="text-sm text-red-700">{validationError}</p>}
 
-      {error && (
-        <p className="text-sm text-red-700">
-          {error}
-        </p>
-      )}
+      <input
+        type="text"
+        placeholder="Headache"
+        value={symptom}
+        onChange={(e) => {
+          setSymptom(e.target.value);
+          clearValidationError();
+        }}
+        className="w-full rounded-md border px-3 py-2 text-sm"
+      />
 
-      {validationError && (
-        <p className="text-sm text-red-700">
-          {validationError}
-        </p>
-      )}
+      <select
+        value={severity}
+        onChange={(e) => {
+          setSeverity(Number(e.target.value));
+          clearValidationError();
+        }}
+        className="w-full rounded-md border px-3 py-2 text-sm"
+      >
+        {Array.from({ length: 10 }, (_, i) => i + 1).map((v) => (
+          <option key={v} value={v}>{v}</option>
+        ))}
+      </select>
 
-      {/* Symptom */}
-      <div className="space-y-1">
-        <label className="block text-sm font-medium text-blue-800">
-          Symptom
-        </label>
-        <input
-          type="text"
-          placeholder="Headache"
-          value={symptom}
-          onChange={(e) => {
-            setSymptom(e.target.value);
-            clearValidationError();
-          }
-        }
-          className="w-full rounded-md border border-blue-200 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
-        />
-      </div>
-
-      {/* Severity */}
-      <div className="space-y-1">
-        <label className="block text-sm font-medium text-blue-800">
-          Severity (1–10)
-        </label>
-        <select
-          value={severity}
-          onChange={(e) => {
-            setSeverity(Number(e.target.value));
-            clearValidationError();
-          }
-        }
-          className="w-full rounded-md border border-blue-200 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
-        >
-          {Array.from({ length: 10 }, (_, i) => i + 1).map((value) => (
-            <option key={value} value={value}>
-              {value} {value === 1 ? "(Mild)" : value === 10 ? "(Severe)" : ""}
-            </option>
-          ))}
-        </select>
-      </div>
-
-      {/* Duration */}
-      <div className="space-y-1">
-        <label className="block text-sm font-medium text-blue-800">
-          Duration (days)
-        </label>
-        <input
-          type="number"
-          min={1}
-          value={durationDays}
-          onChange={(e) => {
-            setDurationDays(Number(e.target.value));
-            clearValidationError();
-          }
-        }
-          className="w-full rounded-md border border-blue-200 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
-        />
-      </div>
-
-      {/* Notes */}
-      <div className="space-y-1">
-        <label className="block text-sm font-medium text-blue-800">
-          Additional Notes (optional)
-        </label>
-        <textarea
-          rows={3}
-          placeholder="Triggers, time of day, medications taken, etc."
-          value={notes}
-          onChange={(e) => {
-            setNotes(e.target.value);
-            clearValidationError();
-          }
-        }
-          className="w-full rounded-md border border-blue-200 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400 resize-none"
-        />
-      </div>
-
-      {/* Submit */}
       <button
         type="submit"
-        className="w-full rounded-md bg-blue-600 py-2 text-sm font-medium text-white hover:bg-blue-700"
+        disabled={hasLoggedToday}
+        className={`w-full rounded-md py-2 text-sm font-medium ${
+          hasLoggedToday
+            ? "cursor-not-allowed bg-gray-300 text-gray-500"
+            : "bg-blue-600 text-white hover:bg-blue-700"
+        }`}
       >
-        Log Symptom
+        {hasLoggedToday ? "Already logged today" : "Log Symptom"}
       </button>
     </form>
   );
