@@ -1,18 +1,27 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useHealthStore } from "@/store/healthStore";
-import { HealthEntry } from "@/types/health";
+import { HealthEntry, HealthMetricType } from "@/types/health";
 import { selectTodayEntryForMetric } from "@/lib/selectors/selectTodayEntryForMetric";
 
 export default function SymptomForm() {
-  // Store state
+  /* ---------------------------------------------
+     Store state
+  --------------------------------------------- */
+
   const entries = useHealthStore((state) => state.entries);
   const addEntry = useHealthStore((state) => state.addEntry);
+  const updateEntry = useHealthStore((state) => state.updateEntry);
   const validationError = useHealthStore((state) => state.validationError);
-  const clearValidationError = useHealthStore((state) => state.clearValidationError);
+  const clearValidationError = useHealthStore(
+    (state) => state.clearValidationError
+  );
 
-  // UI state
+  /* ---------------------------------------------
+     UI state
+  --------------------------------------------- */
+
   const [symptom, setSymptom] = useState("");
   const [severity, setSeverity] = useState(1);
   const [durationDays, setDurationDays] = useState(1);
@@ -20,18 +29,38 @@ export default function SymptomForm() {
   const [error, setError] = useState("");
   const [success, setSuccess] = useState(false);
 
-  // Metric for this form (hardcoded for now)
-  const metric = "steps";
+  /* ---------------------------------------------
+     Metric (hardcoded for now)
+  --------------------------------------------- */
 
-  // Selector-driven derived state
+  const metric: HealthMetricType = "steps";
+
+  /* ---------------------------------------------
+     Selector-derived state
+  --------------------------------------------- */
+
   const existingEntryToday = selectTodayEntryForMetric(entries, metric);
-  const hasLoggedToday = Boolean(existingEntryToday);
+  const isEditing = Boolean(existingEntryToday);
 
-  async function handleSubmit(e: React.FormEvent) {
+  /* ---------------------------------------------
+     Prefill form when editing today’s entry
+  --------------------------------------------- */
+
+  useEffect(() => {
+    if (existingEntryToday) {
+      setSeverity(existingEntryToday.value);
+      setSuccess(false);
+    }
+  }, [existingEntryToday]);
+
+  /* ---------------------------------------------
+     Submit handler
+  --------------------------------------------- */
+
+  function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
 
-    if (hasLoggedToday) return;
-
+    // UI-level validation
     if (!symptom.trim()) {
       setError("Symptom is required.");
       return;
@@ -47,6 +76,7 @@ export default function SymptomForm() {
       return;
     }
 
+    // Build domain entry
     const entry: HealthEntry = {
       id: crypto.randomUUID(),
       metric,
@@ -55,19 +85,37 @@ export default function SymptomForm() {
       timestamp: Date.now(),
     };
 
-    addEntry(entry);
+    // Edit vs create
+    if (isEditing && existingEntryToday) {
+      updateEntry(existingEntryToday.id, {
+        value: severity,
+        timestamp: Date.now(),
+      });
+    } else {
+      addEntry(entry);
+    }
 
-    if (validationError) return;
+    // Store-level validation feedback
+    if (validationError) {
+      setSuccess(false);
+      return;
+    }
 
+    // Success
     setError("");
     clearValidationError();
     setSuccess(true);
 
+    // Reset only non-persistent fields
     setSymptom("");
     setSeverity(1);
     setDurationDays(1);
     setNotes("");
   }
+
+  /* ---------------------------------------------
+     Render
+  --------------------------------------------- */
 
   return (
     <form
@@ -75,47 +123,71 @@ export default function SymptomForm() {
       className="w-full max-w-md rounded-lg border border-blue-100 bg-blue-50 p-6 space-y-6"
     >
       <h2 className="text-xl font-semibold text-blue-900">
-        Log a Symptom
+        {isEditing ? "Edit Today’s Entry" : "Log a Symptom"}
       </h2>
 
-      {success && <p className="text-sm text-green-700">Symptom logged successfully.</p>}
-      {error && <p className="text-sm text-red-700">{error}</p>}
-      {validationError && <p className="text-sm text-red-700">{validationError}</p>}
+      {success && (
+        <p className="text-sm text-green-700">
+          Entry saved successfully.
+        </p>
+      )}
 
-      <input
-        type="text"
-        placeholder="Headache"
-        value={symptom}
-        onChange={(e) => {
-          setSymptom(e.target.value);
-          clearValidationError();
-        }}
-        className="w-full rounded-md border px-3 py-2 text-sm"
-      />
+      {error && (
+        <p className="text-sm text-red-700">
+          {error}
+        </p>
+      )}
 
-      <select
-        value={severity}
-        onChange={(e) => {
-          setSeverity(Number(e.target.value));
-          clearValidationError();
-        }}
-        className="w-full rounded-md border px-3 py-2 text-sm"
-      >
-        {Array.from({ length: 10 }, (_, i) => i + 1).map((v) => (
-          <option key={v} value={v}>{v}</option>
-        ))}
-      </select>
+      {validationError && (
+        <p className="text-sm text-red-700">
+          {validationError}
+        </p>
+      )}
 
+      {/* Symptom */}
+      <div className="space-y-1">
+        <label className="block text-sm font-medium text-blue-800">
+          Symptom
+        </label>
+        <input
+          type="text"
+          placeholder="Headache"
+          value={symptom}
+          onChange={(e) => {
+            setSymptom(e.target.value);
+            clearValidationError();
+          }}
+          className="w-full rounded-md border border-blue-200 bg-white px-3 py-2 text-sm"
+        />
+      </div>
+
+      {/* Severity */}
+      <div className="space-y-1">
+        <label className="block text-sm font-medium text-blue-800">
+          Severity (1–10)
+        </label>
+        <select
+          value={severity}
+          onChange={(e) => {
+            setSeverity(Number(e.target.value));
+            clearValidationError();
+          }}
+          className="w-full rounded-md border border-blue-200 bg-white px-3 py-2 text-sm"
+        >
+          {Array.from({ length: 10 }, (_, i) => i + 1).map((v) => (
+            <option key={v} value={v}>
+              {v}
+            </option>
+          ))}
+        </select>
+      </div>
+
+      {/* Submit */}
       <button
         type="submit"
-        disabled={hasLoggedToday}
-        className={`w-full rounded-md py-2 text-sm font-medium ${
-          hasLoggedToday
-            ? "cursor-not-allowed bg-gray-300 text-gray-500"
-            : "bg-blue-600 text-white hover:bg-blue-700"
-        }`}
+        className="w-full rounded-md bg-blue-600 py-2 text-sm font-medium text-white hover:bg-blue-700"
       >
-        {hasLoggedToday ? "Already logged today" : "Log Symptom"}
+        {isEditing ? "Update Entry" : "Log Symptom"}
       </button>
     </form>
   );
