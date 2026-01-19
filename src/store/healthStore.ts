@@ -36,6 +36,14 @@ export const useHealthStore = create<HealthState>()(
 
         addEntry: (entry) => {
           set((state) => {
+            const selected = state.selectedDate; // "YYYY-MM-DD"
+            const selectedTimestamp = new Date(selected + "T00:00:00Z").getTime();
+
+            const normalizedEntry: HealthEntry = {
+              ...entry,
+              timestamp: selectedTimestamp,
+            };
+            
             // 1. Validate entry
             const result = validateHealthEntry(entry);
             if (!result.valid) {
