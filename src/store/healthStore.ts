@@ -9,6 +9,8 @@ import { selectTodayEntryForMetric } from "@/lib/selectors/selectTodayEntryForMe
 interface HealthState {
   entries: HealthEntry[];
   validationError: string | null;
+  selectedDate: string;
+  setSelectedDate: (date: string) => void;
   clearValidationError: () => void;
   addEntry: (entry: HealthEntry) => void;
   deleteEntry: (id: string) => void;
@@ -22,8 +24,15 @@ export const useHealthStore = create<HealthState>()(
       entries: [],
       validationError: null,
 
-      clearValidationError: () =>
-        set({ validationError: null }),
+      // Global selected day (defaults to today)
+      selectedDate: normalizeDate(Date.now()),
+      setSelectedDate: (date: string) =>
+        set({
+          selectedDate: date,
+        }),
+
+      clearValidationError: () => set({ validationError: null }),
+
 
         addEntry: (entry) => {
           set((state) => {
